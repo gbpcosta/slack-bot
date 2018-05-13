@@ -34,29 +34,55 @@ class SlackBot:
             return -1
         return 0
 
-    def set_user_id(self):
+    def get_user_id(self, user_name=None):
+        assert user_name is not None or self.user_name is not None
+
+        if user_name is None but self.user_name is not None:
+            user_name = self.user_name
+
         users_list = self.get_users_list()
         if users_list['ok']:
-            self.user_id = list(filter(
-                lambda user: user['name'] == self.user_name,
+            user_id = list(filter(
+                lambda user: user['name'] == user_name,
                 users_list['members']))[0]['id']
         else:
             print('Error getting users list. '
-                  'Setting user name and id to None.')
-            self.user_name = None
-            self.user_id = None
+                  'Setting user id to None.')
+            user_id = None
 
-    def set_channel_id(self):
+        return user_id
+
+    def set_user_id(self):
+        self.user_id = self.get_user_id()
+        if self.user_id is None:
+            print('Error getting user id. '
+                  'Setting user name to None.')
+            self.user_name = None
+
+    def get_channel_id(self, channel_name=None):
+        assert channel_name is not None or self.channel_name is not None
+
+        if channel_name is None and self.channel_name is not None:
+            channel_name = self.channel_name
+
         channels_list = self.get_channels_list()
         if channels_list['ok']:
-            self.channel_id = list(filter(
-                lambda channel: channel['name'] == self.channel_name,
+            channel_id = list(filter(
+                lambda channel: channel['name'] == channel_name,
                 channels_list['channels']))[0]['id']
         else:
             print('Error getting channels list. '
-                  'Setting channel name and id to None.')
+                  'Setting channel id to None.')
+            channel_id = None
+
+        return channel_id
+
+    def set_channel_id(self):
+        self.channel_id = self.get_channel_id()
+        if self.channel_id is None:
+            print('Error getting channel id. '
+                  'Setting channel name to None.')
             self.channel_name = None
-            self.channel_id = None
 
     def send_message(self, text, channel_id=None,
                      ephemeral=False, user_id=None):
@@ -95,9 +121,30 @@ class SlackBot:
                                   as_user=True, file=file, title=title))
                 )
 
+    def send_dm(self, text, user_name=None):
+        assert user_name is not None or self.user_name is not None
+
+        if user_name is None and self.user_name is not None:
+            user_name = self.user_name
+            user_id = self.user_id
+        else:
+            user_id = self.get_user_id(user_name)
+
+        open_im = self.sc.api_call("im.open", user=user_id)
+
+        if self.eval_error(("send_dm", open_im)):
+            channel_id = open_im['channel']['id']
+
+            self.eval_error(
+                ("send_dm_message",
+                 self.sc.api_call("chat.postEphemeral",
+                                  channel=channel_id,
+                                  text=text))
+                )
+
     def create_channel(self, channel_name, is_private=False):
         self.eval_error(
-            ("create_channel,
+            ("create_channel",
              self.sc.api_call("conversations.create",
                               name=channel_name,
                               is_private=is_private))
