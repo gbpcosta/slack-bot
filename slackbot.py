@@ -37,7 +37,7 @@ class SlackBot:
     def get_user_id(self, user_name=None):
         assert user_name is not None or self.user_name is not None
 
-        if user_name is None but self.user_name is not None:
+        if user_name is None and self.user_name is not None:
             user_name = self.user_name
 
         users_list = self.get_users_list()
@@ -91,6 +91,8 @@ class SlackBot:
         if user_id is None and self.user_id is not None:
             user_id = self.user_id
 
+        self.sc = SlackClient(self.token)
+
         if not ephemeral:
             self.eval_error(
                 ("send_message",
@@ -113,6 +115,8 @@ class SlackBot:
         if channel_id is None and self.channel_id is not None:
             channel_id = self.channel_id
 
+        self.sc = SlackClient(self.token)
+
         with open(filepath, 'rb') as file:
             self.eval_error(
                 ("send_file",
@@ -130,6 +134,8 @@ class SlackBot:
         else:
             user_id = self.get_user_id(user_name)
 
+        self.sc = SlackClient(self.token)
+
         open_im = self.sc.api_call("im.open", user=user_id)
 
         if self.eval_error(("send_dm", open_im)):
@@ -143,6 +149,7 @@ class SlackBot:
                 )
 
     def create_channel(self, channel_name, is_private=False):
+        self.sc = SlackClient(self.token)
         self.eval_error(
             ("create_channel",
              self.sc.api_call("conversations.create",
@@ -151,6 +158,7 @@ class SlackBot:
             )
 
     def join_channel(self, channel_id):
+        self.sc = SlackClient(self.token)
         self.eval_error(
             ("join_channel",
              self.sc.api_call("channels.join",
@@ -158,6 +166,7 @@ class SlackBot:
             )
 
     def leave_channel(self, channel_id):
+        self.sc = SlackClient(self.token)
         self.eval_error(
             ("leave_channel",
              self.sc.api_call("channels.leave",
@@ -165,6 +174,7 @@ class SlackBot:
             )
 
     def get_channels_list(self, exclude_archived=None):
+        self.sc = SlackClient(self.token)
         channels_list = self.sc.api_call("channels.list",
                                          exclude_archived)
 
@@ -173,6 +183,7 @@ class SlackBot:
         return channels_list
 
     def get_users_list(self):
+        self.sc = SlackClient(self.token)
         users_list = self.sc.api_call("users.list")
 
         if self.eval_error(("get_users_list", users_list)):
@@ -180,6 +191,7 @@ class SlackBot:
         return users_list
 
     def get_channel_info(self, channel_id):
+        self.sc = SlackClient(self.token)
         info = self.sc.api_call("channels.info",
                                 channel=channel_id)
 
@@ -188,6 +200,7 @@ class SlackBot:
         return info
 
     def open_conversation(self, users_list):
+        self.sc = SlackClient(self.token)
         self.eval_error(
             ("open_conversation",
              self.sc.api_call("conversations.open",
